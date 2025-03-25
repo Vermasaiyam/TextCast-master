@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 import subprocess
+from dotenv import load_dotenv
 
 # Dependency checks
 try:
@@ -34,6 +35,9 @@ except (subprocess.CalledProcessError, FileNotFoundError):
     print("FFmpeg is not installed or not in PATH. Please install FFmpeg.")
     sys.exit(1)
 
+
+load_dotenv()
+
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 500 MB max file size
 
@@ -63,7 +67,9 @@ except Exception as e:
     sys.exit(1)
 
 try:
-    LLM = ChatGroq(model="llama-3.3-70b-versatile", temperature=0)
+    api_key = os.getenv('GROQ_API_KEY')
+    # client = Groq(api_key=api_key)
+    LLM = ChatGroq(model="llama-3.3-70b-versatile", temperature=0, api_key=api_key)
 except Exception as e:
     logger.warning(f"LLM is not able to load {e}")
     sys.exit()

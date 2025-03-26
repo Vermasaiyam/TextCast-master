@@ -11,7 +11,7 @@ const Footer = () => {
                         <img src="logo.png" alt="TextCast" className="md:h-20 h-16 mr-0" />
                     </Link>
                     <p className="text-gray-200 mb-2">
-                        Transform YouTube videos into interactive quizzes and insightful summaries.
+                        Convert research papers into immersive podcasts and ask AI your questions via voice for instant explanations.
                     </p>
                     <div className="flex flex-row gap-2 w-full items-center justify-center">
                         <Link to={"https://github.com/Vermasaiyam"} target="blank" title="Github" className="bg-white dark:bg-[#6D758C] p-1.5 rounded-full flex items-center justify-center">

@@ -40,7 +40,6 @@ const TextCarousel = () => {
                 Ask AI your questions via voice and get instant explanations,
                 making complex information more accessible and engaging.
             </p>
-
         </div>
     );
 };

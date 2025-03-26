@@ -41,13 +41,13 @@ export default function EditProfile() {
         formData.append("username", data.username);
         formData.append("email", data.email);
         if (profilePicture) {
-            formData.append("profilePicture", profilePicture); // Append actual file
+            formData.append("profilePicture", profilePicture);
         }
 
         try {
             const res = await axios.post(`${API_END_POINT}/profile/edit`, formData, {
                 headers: {
-                    'Content-Type': 'multipart/form-data' // Ensure multipart/form-data is used
+                    'Content-Type': 'multipart/form-data'
                 },
                 withCredentials: true,
             });
@@ -57,7 +57,7 @@ export default function EditProfile() {
                     ...user,
                     username: res.data.user?.username,
                     email: res.data.user?.email,
-                    profilePicture: res.data.user?.profilePicture, // Ensure updated picture is stored
+                    profilePicture: res.data.user?.profilePicture,
                 };
                 dispatch(setAuthUser(updatedUserData));
                 navigate(`/profile/${user?._id}`);

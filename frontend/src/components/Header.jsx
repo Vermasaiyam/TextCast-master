@@ -47,7 +47,7 @@ export default function Header() {
             <div className="container mx-auto flex justify-between items-center">
                 {/* Logo */}
                 <Link to={"/"} className="flex items-center gap-3">
-                    <img src="logo.png" alt="TextCast" className="md:h-20 h-16" />
+                    <img src="logo.webp" alt="TextCast" className="md:h-20 h-16" />
                 </Link>
 
                 {/* Hamburger Menu - Visible on Mobile */}

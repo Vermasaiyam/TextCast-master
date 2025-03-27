@@ -8,7 +8,7 @@ const Footer = () => {
             <div className="flex lg:flex-row flex-col gap-8 justify-around items-center py-4 bg-blue-100 dark:bg-[#2E3A52] md:px-10 px-4">
                 <div className="">
                     <Link to={'/'} className="flex items-center justify-center gap-3">
-                        <img src="logo.png" alt="TextCast" className="md:h-20 h-16 mr-0" />
+                        <img src="logo.webp" alt="TextCast" className="md:h-20 h-16 mr-0" />
                     </Link>
                     <p className="text-gray-200 mb-2">
                         Convert research papers into immersive podcasts and ask AI your questions via voice for instant explanations.

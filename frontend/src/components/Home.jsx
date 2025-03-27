@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import axios from 'axios';
 import { Loader2 } from "lucide-react";
 import TextCarousel from "./TextCrousel";
+import { useSelector } from "react-redux";
 
 const PAPER_API_END_POINT = import.meta.env.VITE_API_END_POINT_PAPER;
 const FLASK_API_END_POINT = import.meta.env.VITE_FLASK_END_POINT;
@@ -12,6 +13,8 @@ export default function Home() {
     const navigate = useNavigate();
     const [file, setFile] = useState(null);
     const [loading, setLoading] = useState(false);
+
+    const { user } = useSelector(store => store.auth);
 
     const loadingTexts = [
         "Uploading file...",
@@ -48,9 +51,61 @@ export default function Home() {
     };
 
     const handleUpload = async () => {
-        
-    }
+        try {
+            setLoading(true);
+    
+            // Step 1: Upload PDF to Flask API
+            const formData = new FormData();
+            formData.append("pdf", file);
+    
+            const flaskResponse = await axios.post("http://127.0.0.1:5000/upload", formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+    
+            if (flaskResponse.status !== 200) {
+                throw new Error("Failed to process the PDF");
+            }
+    
+            const { podcastUrl, summaries, podcast_script } = flaskResponse.data;
+            console.log("Flask API Response:", { podcastUrl, summaries, podcast_script });
+    
+            // Step 2: Download the audio file from Flask's static URL
+            const audioResponse = await fetch(`http://127.0.0.1:5000${podcastUrl}`);
+            if (!audioResponse.ok) {
+                throw new Error("Failed to fetch the audio file from Flask server");
+            }
+    
+            const audioBlob = await audioResponse.blob();
+            const audioFile = new File([audioBlob], "podcast.mp3", { type: "audio/mpeg" });
+    
+            // Step 3: Upload to Node.js Backend
+            const nodeFormData = new FormData();
+            nodeFormData.append("paper", file); // PDF file
+            nodeFormData.append("audio", audioFile); // Attach audio file
+            nodeFormData.append("transcription", podcast_script);
+            nodeFormData.append("summary", summaries.join("\n"));
+            nodeFormData.append("title", file.name);
+            nodeFormData.append("userId", user?._id); // Ensure userId is passed
+    
+            const nodeResponse = await axios.post("http://localhost:8000/api/paper/upload", nodeFormData, {
+                headers: { "Content-Type": "multipart/form-data" }, // Set correct header
+            });
+    
+            const { _id: paperId } = nodeResponse.data;
+            console.log("Paper created with ID:", paperId);
+    
+            // Step 4: Navigate to Podcast Page
+            navigate(`/podcast?paperId=${paperId}`);
+    
+        } catch (error) {
+            console.error("Error uploading file:", error);
+            alert("File upload failed");
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    
     return (
         <div className="bg-[#0B1930] min-h-[90vh] flex flex-col items-center justify-center text-white p-4">
 

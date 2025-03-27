@@ -3,11 +3,12 @@ import sys
 import logging
 import subprocess
 from dotenv import load_dotenv
+from flask_cors import CORS
 
 # Dependency checks
 try:
     import flask
-    from flask import Flask, render_template, jsonify, request
+    from flask import Flask, render_template, jsonify, request, send_file, make_response, send_from_directory
     import whisper
     from gtts import gTTS
     import pdfminer
@@ -36,9 +37,11 @@ except (subprocess.CalledProcessError, FileNotFoundError):
     sys.exit(1)
 
 
+app = Flask(__name__)
+CORS(app)
+
 load_dotenv()
 
-app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 500 MB max file size
 
 # Setup logging
@@ -50,6 +53,7 @@ MAIN_DIR = "Research Paper"    # Stores uploaded papers
 INPUT_DIR = "Input_audio"   # Stores user input audio
 PODCAST_PATH = os.path.join("static", "audio")      # Stores podcast audio
 SUMMARIES_FILE = os.path.join(MAIN_DIR, "summaries.txt")        # Stores each page summary
+AUDIO_FOLDER = os.path.join(os.getcwd(), "static/audio")
 os.makedirs(MAIN_DIR, exist_ok=True)
 os.makedirs(INPUT_DIR, exist_ok=True)
 os.makedirs(PODCAST_PATH, exist_ok=True)
@@ -269,58 +273,77 @@ def home():
 @app.route("/upload", methods=["POST"])
 def upload_file():
     global FAISS_RETRIEVER
-    # Clear podcast directory at startup
-    for file in os.listdir(PODCAST_PATH):
-        file_path = os.path.join(PODCAST_PATH, file)
-        if os.path.exists(file_path) and file.endswith(".mp3"):
-            os.remove(file_path)
-            logger.info(f"Removed old audio file: {file_path}")
 
-    # Clear main directory at startup
-    for file in os.listdir(MAIN_DIR):
-        file_path = os.path.join(MAIN_DIR, file)
-        if os.path.exists(file_path) and (file.endswith(".pdf") or file.endswith(".txt")):
-            os.remove(file_path)
-            logger.info(f"Removed old main file: {file_path}")
+    # Remove old files
+    try:
+        for file in os.listdir(PODCAST_PATH):
+            file_path = os.path.join(PODCAST_PATH, file)
+            if file.endswith(".mp3") and os.path.exists(file_path):
+                os.remove(file_path)
+                logger.info(f"Removed old audio file: {file_path}")
+
+        for file in os.listdir(MAIN_DIR):
+            file_path = os.path.join(MAIN_DIR, file)
+            if file.endswith((".pdf", ".txt")) and os.path.exists(file_path):
+                os.remove(file_path)
+                logger.info(f"Removed old main file: {file_path}")
+    except Exception as e:
+        logger.error(f"Error removing old files: {e}")
 
     file_path = None
     try:
-        if 'pdf' not in request.files:
-            logger.error("No file part in request")
+        if "pdf" not in request.files:
+            logger.error("No file uploaded")
             return jsonify({"error": "No file uploaded"}), 400
 
-        file = request.files['pdf']
+        file = request.files["pdf"]
         if file.filename == "":
             logger.error("No file selected")
             return jsonify({"error": "No file selected"}), 400
 
+        # Save file
         file_path = os.path.join(MAIN_DIR, file.filename)
         file.save(file_path)
-        content = extract_page_text(file_path)
-        logger.info("Each page text extracted")
-        summaries = summarize_page(content)
-        logger.info("Page summaries generated")
-        FAISS_RETRIEVER = initialize_vector_store(summaries)  # Initialize retriever once
-        podcast_script = get_response(summaries)
-        logger.info("Podcast script generated")
-        success = script_to_audio(podcast_script, os.path.join(PODCAST_PATH, "podcast.mp3"))
 
-        if success:
-            logger.info(f"Podcast saved to {PODCAST_PATH}/podcast.mp3")
-            return jsonify({"podcastUrl": "/static/audio/podcast.mp3"})
+        # Process file (mock functions for demonstration)
+        content = extract_page_text(file_path)  
+        summaries = summarize_page(content)  
+        podcast_script = get_response(summaries)  
+
+        # Generate podcast audio
+        podcast_file = os.path.join(PODCAST_PATH, "podcast.mp3")
+        success = script_to_audio(podcast_script, podcast_file)
+
+        if success and os.path.exists(podcast_file):  # Ensure the file exists
+            return jsonify({
+                "message": "Podcast generated successfully",
+                "podcastUrl": f"/static/audio/podcast.mp3",
+                "summaries": summaries,
+                "podcast_script": podcast_script
+            }), 200
         else:
-            logger.error("Podcast generation failed")
             return jsonify({"error": "Podcast generation failed"}), 500
+
     except ValueError as e:
         logger.error(f"Processing error: {e}")
         return jsonify({"error": str(e)}), 400
     except Exception as e:
-        logger.error(f"Unexpected error in upload_file: {e}")
+        logger.error(f"Unexpected error: {e}")
         return jsonify({"error": "Internal server error"}), 500
-    
     finally:
         if file_path and os.path.exists(file_path):
-            os.remove(file_path)
+            try:
+                os.remove(file_path)
+            except Exception as e:
+                logger.error(f"Failed to delete {file_path}: {e}")
+
+@app.route('/static/audio/<filename>', methods=['GET'])
+def download_audio(filename):
+    """Serve the requested audio file"""
+    try:
+        return send_from_directory(AUDIO_FOLDER, filename, as_attachment=True)
+    except FileNotFoundError:
+        return jsonify({"error": "File not found"}), 404
 
 @app.route("/ask-question", methods=["POST"])
 def ask_question():

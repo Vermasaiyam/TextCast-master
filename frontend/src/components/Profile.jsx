@@ -30,8 +30,8 @@ const Profile = () => {
     const handleDeleteAccount = async () => {
         if (window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
             try {
-                const userId = user._id; // You should have the user object from Redux or wherever you're storing it
-                console.log("Deleting user with ID:", userId);  // Log to check if `userId` is available
+                const userId = user._id;
+                console.log("Deleting user with ID:", userId);
 
                 const response = await axios.delete(`${API_END_POINT}/delete/${userId}`);
 

@@ -9,6 +9,7 @@ import Contact from "./components/Contact";
 import About from "./components/About";
 import EditProfile from "./components/EditProfile";
 import ChangePassword from "./components/ChangePassword";
+import PodcastPage from "./components/Podcast";
 
 const browserRouter = createBrowserRouter([
   {
@@ -21,6 +22,13 @@ const browserRouter = createBrowserRouter([
       {
         path: '/',
         element: <Home />
+      },
+      {
+        path: '/podcast',
+        element:
+          <ProtectedRoutes>
+            <PodcastPage />
+          </ProtectedRoutes>
       },
       {
         path: '/profile/:id',

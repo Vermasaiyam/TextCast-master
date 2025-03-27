@@ -1,5 +1,5 @@
 import express from "express";
-import { uploadPaper } from "../controllers/paper.controller.js";
+import { getPaper, uploadPaper } from "../controllers/paper.controller.js";
 import upload from "../middlewares/multer.js";
 
 const router = express.Router();
@@ -12,5 +12,7 @@ router.post(
     ]),
     uploadPaper
 );
+router.get("/:paperId", getPaper);
+
 
 export default router;
